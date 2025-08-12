@@ -1,18 +1,40 @@
+# serializers.py
 from rest_framework import serializers
-from .models import Property
-from users.models import User  # custom user
+from .models import Property, PropertyPhoto
+from rest_framework import serializers
+from .models import Property, PropertyPhoto
 
-class AgentSerializer(serializers.ModelSerializer):
+class PropertyPhotoSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
-        model = User
-        fields = ['id', 'username', 'first_name', 'last_name']
+        model = PropertyPhoto
+        fields = ['id', 'image', 'image_url']
 
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            return request.build_absolute_uri(obj.image.url)
+        return None
+    
 class PropertySerializer(serializers.ModelSerializer):
-    agent_name = serializers.SerializerMethodField()
+    photos = PropertyPhotoSerializer(many=True, read_only=True)
+    agent_name = serializers.CharField(source='agent.username', read_only=True)
 
     class Meta:
         model = Property
-        fields = '__all__'
+        fields = [
+            "id", "title", "description", "price", "location",
+            "category", "status", "agent_name", "date_listed", "photos"
+        ]
 
-    def get_agent_name(self, obj):
-        return obj.agent.get_full_name() if obj.agent else None
+class PropertyAnalyticsSerializer(serializers.ModelSerializer):
+    total_inquiries = serializers.IntegerField(read_only=True)
+    time_on_market = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Property
+        fields = ['id', 'title', 'views', 'total_inquiries', 'time_on_market']
+
+    def get_time_on_market(self, obj):
+        return obj.time_on_market

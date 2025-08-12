@@ -20,6 +20,7 @@ class Property(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField()
+    views = models.PositiveIntegerField(default=0)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     location = models.CharField(max_length=255)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
@@ -29,6 +30,11 @@ class Property(models.Model):
 
     def __str__(self):
         return self.title
+    
+    @property
+    def time_on_market(self):
+        from django.utils.timezone import now
+        return (now() - self.date_listed).days
 
 
 # ---------- Property Photos ----------
