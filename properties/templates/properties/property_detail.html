@@ -1,0 +1,7 @@
+<h1>{{ property.title }}</h1>
+<p>{{ property.description }}</p>
+<p>Price: {{ property.price }}</p>
+<p>Location: {{ property.location }}</p>
+<a href="{% url 'property_update' property.pk %}">Edit</a> |
+<a href="{% url 'property_delete' property.pk %}">Delete</a> |
+<a href="{% url 'property_list' %}">Back to list</a>
