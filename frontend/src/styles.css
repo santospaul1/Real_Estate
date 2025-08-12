@@ -1,0 +1,10 @@
+/* src/styles.css */
+.container{max-width:1000px;margin:0 auto;padding:20px;font-family:sans-serif}
+.property-list{list-style:none;padding:0}
+.property-item{display:flex;gap:12px;border:1px solid #eee;padding:10px;margin:12px 0;border-radius:6px}
+.thumbs img{width:120px;height:80px;object-fit:cover;margin-right:6px}
+.meta{flex:1}
+.panel{border:1px solid #ddd;padding:12px;margin:12px 0}
+.property-form input, .property-form textarea{display:block;width:100%;padding:8px;margin:6px 0}
+.preview-row{display:flex;gap:8px;margin:8px 0}
+.preview-item img{width:120px;height:80px;object-fit:cover}

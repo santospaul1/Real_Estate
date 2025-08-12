@@ -1,0 +1,6 @@
+<h1>Delete {{ property.title }}?</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, delete</button>
+</form>
+<a href="{% url 'property_list' %}">Cancel</a>

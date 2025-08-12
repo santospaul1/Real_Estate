@@ -1,0 +1,10 @@
+<h1>Properties</h1>
+<a href="{% url 'property_create' %}">Add New</a>
+<ul>
+    {% for prop in properties %}
+        <li>
+            <a href="{% url 'property_detail' prop.pk %}">{{ prop.title }}</a>
+            - {{ prop.price }}
+        </li>
+    {% endfor %}
+</ul>
