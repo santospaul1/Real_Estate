@@ -1,7 +1,9 @@
 # accounts/serializers.py
+from properties.models import Client
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+
 
 User = get_user_model()
 
@@ -48,3 +50,42 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(pw)
         instance.save()
         return instance
+
+class ClientSerializer(serializers.ModelSerializer):
+    assigned_agent = serializers.SlugRelatedField(
+        slug_field='username', queryset=User.objects.all(), required=False, allow_null=True
+    )
+
+    class Meta:
+        model = Client
+        fields = '__all__'
+        read_only_fields = ('created_at',)
+
+# serializers.py
+# clients/serializers.py
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from properties.models import Client
+
+User = get_user_model()
+
+class ClientRegistrationSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=6)
+
+    class Meta:
+        model = Client
+        fields = ['username', 'password', 'email', 'phone', 'company_name']
+
+    def create(self, validated_data):
+        username = validated_data.pop('username')
+        password = validated_data.pop('password')
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            role="client"  # Ensure only clients are created
+        )
+
+        client = Client.objects.create(user=user, **validated_data)
+        return client

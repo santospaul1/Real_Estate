@@ -1,6 +1,6 @@
 # properties/admin.py
 from django.contrib import admin
-from .models import Property, PropertyPhoto
+from .models import Client, Property, PropertyPhoto
 
 class PropertyPhotoInline(admin.TabularInline):
     model = PropertyPhoto
@@ -17,3 +17,7 @@ class PropertyAdmin(admin.ModelAdmin):
 class PropertyPhotoAdmin(admin.ModelAdmin):
     list_display = ('property','caption','uploaded_at')
     readonly_fields = ('uploaded_at',)
+@admin.register(Client)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ('full_name','email','phone')
+

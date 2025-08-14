@@ -145,7 +145,7 @@ class CommunicationLog(models.Model):
         ordering = ['-timestamp']
 
     def __str__(self):
-        #target = self.related_lead or self.related_client
+        target = getattr(self, 'related_lead', None) or getattr(self, 'related_client', None)
         return f"Comm for {target} at {self.timestamp}"
 
 
