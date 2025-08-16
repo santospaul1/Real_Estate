@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/axios';  // Your axios instance with auth
+import axios from 'axios';  
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Line
 } from 'recharts';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -14,7 +14,7 @@ export default function SalesReport() {
   async function fetchReport() {
     setLoading(true);
     try {
-      const res = await api.get(`/reports/sales/?year=${year}`);
+      const res = await axios.get(`/api/reports/sales/?year=${year}`);
       setData(res.data);
     } catch (err) {
       alert('Failed to load sales report');
@@ -28,7 +28,7 @@ export default function SalesReport() {
   }, [year]);
 
   function handleExportCSV() {
-    window.open(`/api/reports/sales/export/csv/?year=${year}`, '_blank');
+    window.open(`/reports/sales/export/csv/?year=${year}`, '_blank');
   }
 
   return (
@@ -54,7 +54,7 @@ export default function SalesReport() {
       {!loading && data.length > 0 && (
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <XAxis dataKey="month" />
+            <XAxis dataKey="period" />
             <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
             <YAxis
               yAxisId="right"
@@ -62,10 +62,27 @@ export default function SalesReport() {
               stroke="#82ca9d"
               tickFormatter={val => `${(val * 100).toFixed(0)}%`}
             />
-            <Tooltip formatter={(value, name) => (name === 'conversion_rate' ? `${value * 100}%` : value)} />
+            <Tooltip formatter={(value, name) => 
+              (name === 'Conversion Rate' ? `${(value * 100).toFixed(2)}%` : value)
+            } />
             <Legend />
+            
+            {/* First bar: Sales */}
             <Bar yAxisId="left" dataKey="total_sales" fill="#8884d8" name="Total Sales ($)" />
-            <Bar yAxisId="right" dataKey="conversion_rate" fill="#82ca9d" name="Conversion Rate" />
+            
+            {/* Second bar: Example Orders Count (replace with your actual field) */}
+            <Bar yAxisId="left" dataKey="deals_count" fill="#ff7300" name="Deals Count" />
+            
+            {/* Line for conversion rate */}
+            <Line 
+              yAxisId="right" 
+              type="monotone" 
+              dataKey="conversion_rate" 
+              stroke="#82ca9d" 
+              name="Conversion Rate" 
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
           </BarChart>
         </ResponsiveContainer>
       )}

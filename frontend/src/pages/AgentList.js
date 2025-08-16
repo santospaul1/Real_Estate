@@ -18,7 +18,7 @@ export default function AgentList() {
     setError("");
 
     Promise.all([
-      axios.get("/api/agentprofiles/", { headers: auth() }),
+      axios.get("/agentprofiles/", { headers: auth() }),
       axios.get("/api/dashboard/agent-performance/", { headers: auth() }),
     ])
       .then(([aRes, pRes]) => {

@@ -10,6 +10,7 @@ router.register(r'clients', ClientViewSet)
 router.register(r'communications', CommunicationLogViewSet)
 router.register(r'agentprofiles', AgentProfileViewSet, basename='agentprofile')
 router.register(r'transactions', TransactionViewSet, basename='transaction')
+
 #router.register(r'agent-performance', agent_performance_summary)
 
 

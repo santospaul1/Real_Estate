@@ -1,11 +1,10 @@
-// src/pages/Login.jsx
 import React, { useState } from "react";
 import { login } from "../services/authService";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
   const nav = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState(""); // changed from email
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("client");
   const [error, setError] = useState("");
@@ -14,10 +13,10 @@ export default function Login() {
     e.preventDefault();
     setError("");
     try {
-      const res = await login(email, password, role);
-      if (res.role === "admin") nav("/admin");
-      else if (res.role === "agent") nav("/agent");
-      else nav("/client");
+      const res = await login(username, password, role); // send username instead of email
+      if (res.role === "admin") nav("../Dashboard");
+      else if (res.role === "agent") nav("/agent/dashboard");
+      else nav("/properties");
     } catch (err) {
       setError(err.message);
     }
@@ -29,10 +28,10 @@ export default function Login() {
       {error && <p style={{ color: "red" }}>{error}</p>}
       <form onSubmit={handleLogin}>
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e)=>setEmail(e.target.value)}
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e)=>setUsername(e.target.value)}
           required
           style={{ width:"100%", marginBottom: 8 }}
         />

@@ -8,3 +8,4 @@ export const createProperty = (data) => axios.post(API_URL, data);
 export const updateProperty = (id, data) => axios.put(`${API_URL}${id}/`, data);
 export const deleteProperty = (id) => axios.delete(`${API_URL}${id}/`);
 export const getAgents = () => axios.get(`${API_URL}agents/`);
+ 

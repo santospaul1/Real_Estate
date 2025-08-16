@@ -16,7 +16,7 @@ export default function ReportBuilder() {
       start_date: dateRange.start,
       end_date: dateRange.end,
     });
-    const res = await fetch(`/api/reports/custom/?${params.toString()}`);
+    const res = await fetch(`http://127.0.0.1:8000/api/reports/custom-report/?${params.toString()}`);
     const json = await res.json();
     setReportData(json);
   }

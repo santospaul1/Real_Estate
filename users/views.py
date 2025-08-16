@@ -16,11 +16,10 @@ User = get_user_model()
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.hashers import make_password
-
 class IsAdminOrSelf(permissions.BasePermission):
     """
     Allow access if user is admin, manager, or operating on their own object.
-    """
+    """  
     def has_object_permission(self, request, view, obj):
         if not request.user or not request.user.is_authenticated:
             return False
@@ -123,3 +122,8 @@ class ClientRegisterView(APIView):
             "role": "client",
             "username": user.username
         }, status=status.HTTP_201_CREATED)
+    
+class ClientRegistrationView(generics.CreateAPIView):
+    queryset = Client.objects.all()
+    serializer_class = ClientRegistrationSerializer
+    permission_classes = [permissions.AllowAny]

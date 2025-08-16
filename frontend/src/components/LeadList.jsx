@@ -44,7 +44,7 @@ const LeadList = () => {
         <tbody>
           {leads.map(lead => (
             <tr key={lead.id}>
-              <td>{lead.name}</td>
+              <td>{lead.full_name}</td>
               <td>{lead.budget}</td>
               <td>{lead.stage}</td>
               <td>

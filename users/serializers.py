@@ -70,22 +70,13 @@ from properties.models import Client
 User = get_user_model()
 
 class ClientRegistrationSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(write_only=True)
-    password = serializers.CharField(write_only=True, min_length=6)
-
     class Meta:
         model = Client
-        fields = ['username', 'password', 'email', 'phone', 'company_name']
-
-    def create(self, validated_data):
-        username = validated_data.pop('username')
-        password = validated_data.pop('password')
-
-        user = User.objects.create_user(
-            username=username,
-            password=password,
-            role="client"  # Ensure only clients are created
-        )
-
-        client = Client.objects.create(user=user, **validated_data)
-        return client
+        fields = [
+            'full_name',
+            'email',
+            'phone',
+            'preferences',
+            'client_type',
+            'assigned_agent',
+        ]

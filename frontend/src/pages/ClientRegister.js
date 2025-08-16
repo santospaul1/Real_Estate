@@ -1,43 +1,47 @@
-// src/pages/ClientRegister.js
-import React, { useState } from "react";
-import api from "../api/axios";
+import React, { useState } from 'react';
+import axios from 'axios';
 
-export default function ClientRegister() {
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    email: "",
-    phone: "",
-    company_name: "",
+const ClientRegister = () => {
+  const [form, setForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    preferences: '{}',
+    client_type: 'buyer',
+    assigned_agent: ''
   });
-  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/clients/register/", formData);
-      setMessage("✅ Client registered successfully!");
-    } catch (err) {
-      setMessage("❌ " + (err.response?.data?.detail || "Registration failed"));
+      const preferencesObj = JSON.parse(form.preferences || '{}');
+      await axios.post('/api/register-client/', { ...form, preferences: preferencesObj });
+      alert('Client registered successfully');
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+      alert('Registration failed');
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "auto" }}>
-      <h2>Client Registration</h2>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <input name="username" placeholder="Username" onChange={handleChange} required />
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} />
-        <input name="phone" placeholder="Phone" onChange={handleChange} />
-        <input name="company_name" placeholder="Company Name" onChange={handleChange} />
-        <button type="submit">Register</button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <input name="full_name" placeholder="Full Name" onChange={handleChange} />
+      <input name="email" placeholder="Email" onChange={handleChange} />
+      <input name="phone" placeholder="Phone" onChange={handleChange} />
+      <textarea name="preferences" placeholder='{"beds":3,"budget_max":5000000}' onChange={handleChange} />
+      <select name="client_type" onChange={handleChange}>
+        <option value="buyer">Buyer</option>
+        <option value="seller">Seller</option>
+        <option value="both">Both</option>
+      </select>
+      <input name="assigned_agent" placeholder="Agent ID (optional)" onChange={handleChange} />
+      <button type="submit">Register Client</button>
+    </form>
   );
-}
+};
+
+export default ClientRegister;

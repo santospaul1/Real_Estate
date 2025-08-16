@@ -101,10 +101,25 @@ class AgentPerformanceSerializer(serializers.ModelSerializer):
         fields = ['deals_closed', 'total_commission', 'customer_satisfaction', 'last_updated']
 
 class TransactionSerializer(serializers.ModelSerializer):
+    property_name = serializers.CharField(source="property.title", read_only=True)
+    buyer_name = serializers.CharField(source="buyer.full_name", read_only=True)   # assuming Client has a "name" field
+    agent_name = serializers.CharField(source="agent.get_full_name", read_only=True)  # if using Django User with first+last
+
     class Meta:
         model = Transaction
         fields = [
-            'id', 'property', 'buyer', 'agent', 'transaction_type',
-            'amount', 'commission_percent', 'commission_amount', 'signed_at', 'created_at'
+            "id",
+            "transaction_type",
+            "amount",
+            "commission_percent",
+            "commission_amount",
+            "signed_at",
+            "created_at",
+            "property",        # keep the id if you still want it
+            "property_name",   # human readable
+            "buyer",
+            "buyer_name",
+            "agent",
+            "agent_name",
         ]
         read_only_fields = ['commission_amount', 'signed_at', 'created_at']

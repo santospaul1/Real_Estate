@@ -74,7 +74,7 @@ def property_analytics(request):
     properties = Property.objects.annotate(
         inquiries_count=Count('inquiries'),
         days_on_market=ExpressionWrapper(
-            now() - F('created_at'), output_field=DurationField()
+            now() - F('date_listed'), output_field=DurationField()
         )
     ).values('id', 'title', 'inquiries_count', 'views', 'days_on_market')
 
@@ -137,10 +137,17 @@ class CommunicationLogViewSet(viewsets.ModelViewSet):
 
 class AgentProfileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AgentProfile.objects.all()
+    
+    
     serializer_class = AgentProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__username', 'specialization', 'territory']
+
+    
+    def get_queryset(self):
+        return AgentProfile.objects.all()
+
 
 class IsAgentOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -176,6 +183,7 @@ class IsAdminOrManager(permissions.BasePermission):
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.select_related('property', 'buyer', 'agent').all().order_by('-created_at')
+    
     serializer_class = TransactionSerializer
 
     def get_permissions(self):

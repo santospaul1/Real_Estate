@@ -133,3 +133,19 @@ def export_sales_csv(request):
         ])
     return response
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def custom_report(request):
+    """
+    Expect payload like:
+    {
+      "metrics": ["total_sales", "deals_closed"],
+      "group_by": ["month"]
+    }
+    This is just a stub: returns fixed example data.
+    """
+    data = [
+        {"month": "2025-01", "total_sales": 100000, "deals_closed": 10},
+        {"month": "2025-02", "total_sales": 120000, "deals_closed": 12},
+    ]
+    return Response(data)

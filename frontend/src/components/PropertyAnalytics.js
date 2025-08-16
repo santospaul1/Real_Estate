@@ -6,7 +6,7 @@ const PropertyAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
 
   useEffect(() => {
-    axios.get("/api/analytics/property-analytics/", {
+    axios.get("/api/property-analytics/", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     })
     .then(res => setAnalytics(res.data))

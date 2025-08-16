@@ -1,33 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import api from '../api/axios';
+import axios from 'axios';
 
-
-export default function TransactionList() {
+const TransactionList = () => {
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchTransactions() {
-      try {
-        setLoading(true);
-        const res = await api.get('transaction/');
-        setTransactions(res.data);
-      } catch {
-        setError('Failed to fetch transactions');
-      } finally {
-        setLoading(false);
+    axios.get('/api/transactions/', {
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('token')
       }
-    }
-    fetchTransactions();
+    })
+    .then(res => setTransactions(res.data))
+    .catch(err => console.error(err));
   }, []);
 
   return (
     <div>
-      <h1>Transactions & Commissions</h1>
-      {loading && <p>Loading...</p>}
-      {error && <p style={{color:'red'}}>{error}</p>}
-      <table border="1" cellPadding="5">
+      <h2>Transactions & Commissions</h2>
+      <table>
         <thead>
           <tr>
             <th>ID</th>
@@ -45,18 +35,20 @@ export default function TransactionList() {
           {transactions.map(tx => (
             <tr key={tx.id}>
               <td>{tx.id}</td>
-              <td>{tx.property ? tx.property.title : '-'}</td>
-              <td>{tx.buyer ? tx.buyer.full_name : '-'}</td>
-              <td>{tx.agent ? tx.agent.username : '-'}</td>
-              <td>{tx.transaction_type}</td>
-              <td>${tx.amount?.toLocaleString()}</td>
-              <td>{tx.commission_percent}%</td>
-              <td>${tx.commission_amount?.toLocaleString()}</td>
-              <td>{new Date(tx.signed_at).toLocaleDateString()}</td>
+              <td>{tx.property_name || '-'}</td>
+              <td>{tx.buyer_name || '-'}</td>
+              <td>{tx.agent_name || '-'}</td>
+              <td>{tx.transaction_type || '-'}</td>
+              <td>{tx.amount != null ? `$${tx.amount.toLocaleString()}` : '-'}</td>
+              <td>{tx.commission_percent != null ? `${tx.commission_percent}%` : '-'}</td>
+              <td>{tx.commission_amount != null ? `$${tx.commission_amount.toLocaleString()}` : '-'}</td>
+              <td>{tx.signed_at ? new Date(tx.signed_at).toLocaleDateString() : '-'}</td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
   );
-}
+};
+
+export default TransactionList;

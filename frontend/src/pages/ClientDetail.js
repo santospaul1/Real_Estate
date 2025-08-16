@@ -1,93 +1,70 @@
-// src/pages/ClientDetail.js
-import React, { useState, useEffect, useContext } from 'react';
-import api from '../api/axios';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
 
-export default function ClientDetail() {
-  const { user } = useContext(AuthContext);
+const ClientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [client, setClient] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-
-  // preferences as JSON string for easy editing
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
     phone: '',
     client_type: 'buyer',
-    assigned_agent: '', // user id
-    preferences: '{}',  // JSON string to edit
+    assigned_agent: '',
+    preferences: '{}'
   });
 
   useEffect(() => {
-    async function fetchClient() {
-      try {
-        setLoading(true);
-        const res = await api.get(`clients/${id}/`);
-        setClient(res.data);
-        setFormData({
-          full_name: res.data.full_name || '',
-          email: res.data.email || '',
-          phone: res.data.phone || '',
-          client_type: res.data.client_type || 'buyer',
-          assigned_agent: res.data.assigned_agent ? res.data.assigned_agent.id : '',
-          preferences: JSON.stringify(res.data.preferences || {}, null, 2),
-        });
-      } catch (err) {
-        setError('Failed to load client');
-      } finally {
-        setLoading(false);
+    axios.get(`/api/clients/${id}/`, {
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('token')
       }
-    }
-    fetchClient();
+    })
+    .then(res => {
+      setFormData({
+        full_name: res.data.full_name || '',
+        email: res.data.email || '',
+        phone: res.data.phone || '',
+        client_type: res.data.client_type || 'buyer',
+        assigned_agent: res.data.assigned_agent ? res.data.assigned_agent.id : '',
+        preferences: JSON.stringify(res.data.preferences || {}, null, 2)
+      });
+    })
+    .catch(err => console.error(err));
   }, [id]);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
-    setFormData((f) => ({ ...f, [name]: value }));
+    setFormData(f => ({ ...f, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
-    setSaving(true);
-    setError(null);
-
     let parsedPreferences;
     try {
       parsedPreferences = JSON.parse(formData.preferences);
     } catch {
-      setError('Preferences must be valid JSON');
-      setSaving(false);
+      alert('Preferences must be valid JSON');
       return;
     }
 
-    try {
-      await api.put(`clients/${id}/`, {
-        ...formData,
-        preferences: parsedPreferences,
-      });
-      navigate('/clients');
-    } catch (err) {
-      setError('Failed to save client');
-    } finally {
-      setSaving(false);
-    }
+    axios.put(`/api/clients/${id}/`, {
+      ...formData,
+      preferences: parsedPreferences
+    }, {
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('token')
+      }
+    })
+    .then(() => navigate('/clients'))
+    .catch(err => console.error(err));
   };
-
-  if (!user) return <p>Please login to view this page.</p>;
-  if (loading) return <p>Loading client details...</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
     <div>
-      <h1>Edit Client: {client.full_name}</h1>
+      <h2>Edit Client</h2>
       <form onSubmit={handleSubmit}>
-
         <label>
           Full Name:
           <input
@@ -141,7 +118,6 @@ export default function ClientDetail() {
             type="number"
             value={formData.assigned_agent}
             onChange={handleChange}
-            placeholder="Agent User ID"
           />
         </label>
         <br />
@@ -158,10 +134,10 @@ export default function ClientDetail() {
         </label>
         <br />
 
-        <button type="submit" disabled={saving}>
-          {saving ? 'Saving...' : 'Save Client'}
-        </button>
+        <button type="submit">Save Client</button>
       </form>
     </div>
   );
-}
+};
+
+export default ClientDetail;

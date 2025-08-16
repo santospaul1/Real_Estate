@@ -157,7 +157,6 @@ class AgentProfile(models.Model):
     phone = models.CharField(max_length=32, blank=True)
     active = models.BooleanField(default=True)
     joined_at = models.DateField(null=True, blank=True)
-
     def __str__(self):
         return f"{self.user.username} profile"
 

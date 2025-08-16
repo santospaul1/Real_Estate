@@ -1,11 +1,11 @@
 // src/pages/LeadDetail.js
 import React, { useState, useEffect, useContext } from 'react';
-import api from '../api/axios';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+
 
 export default function LeadDetail() {
-  const { user } = useContext(AuthContext);
+  
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -31,7 +31,7 @@ export default function LeadDetail() {
     async function fetchLead() {
       try {
         setLoading(true);
-        const res = await api.get(`leads/${id}/`);
+        const res = await axios.get(`/api/leads/${id}/`);
         setLead(res.data);
         setFormData({
           full_name: res.data.full_name || '',
@@ -62,7 +62,7 @@ export default function LeadDetail() {
     setSaving(true);
     setError(null);
     try {
-      await api.put(`leads/${id}/`, formData);
+      await axios.put(`/api/leads/${id}/`, formData);
       navigate('/leads');  // back to leads list after save
     } catch (err) {
       setError('Failed to save changes');
@@ -71,7 +71,7 @@ export default function LeadDetail() {
     }
   };
 
-  if (!user) return <p>Please login to view this page.</p>;
+  //if (!user) return <p>Please login to view this page.</p>;
   if (loading) return <p>Loading lead details...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
