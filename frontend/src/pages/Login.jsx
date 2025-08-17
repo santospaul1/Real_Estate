@@ -1,58 +1,47 @@
 import React, { useState } from "react";
-import { login } from "../services/authService";
-import { useNavigate, Link } from "react-router-dom";
+import { loginUser } from "../api/auth";
 
-export default function Login() {
-  const nav = useNavigate();
-  const [username, setUsername] = useState(""); // changed from email
+const Login = () => {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("client");
   const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    try {
-      const res = await login(username, password, role); // send username instead of email
-      if (res.role === "admin") nav("../Dashboard");
-      else if (res.role === "agent") nav("/agent/dashboard");
-      else nav("/properties");
-    } catch (err) {
-      setError(err.message);
+    const success = await loginUser(username, password);
+
+    if (success) {
+      window.location.href = "/dashboard"; // redirect after login
+    } else {
+      setError("Invalid username or password");
     }
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 420, margin: "40px auto" }}>
+    <div className="login-container">
       <h2>Login</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="Username"
           value={username}
-          onChange={(e)=>setUsername(e.target.value)}
+          onChange={(e) => setUsername(e.target.value)}
           required
-          style={{ width:"100%", marginBottom: 8 }}
         />
+        <br />
         <input
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e)=>setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ width:"100%", marginBottom: 8 }}
         />
-        <select value={role} onChange={(e)=>setRole(e.target.value)} style={{ width:"100%", marginBottom: 8 }}>
-          <option value="client">Client</option>
-          <option value="agent">Agent</option>
-          <option value="admin">Admin</option>
-        </select>
+        <br />
         <button type="submit">Login</button>
       </form>
-      <p style={{ marginTop: 12 }}>
-        New client? <Link to="/register">Register here</Link>
-      </p>
     </div>
   );
-}
+};
+
+export default Login;

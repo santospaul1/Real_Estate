@@ -1,24 +1,6 @@
+# properties/admin.py
 from django.contrib import admin
-from properties.models import Client, Property, PropertyPhoto
-from users.models import User
-from django.contrib.auth.hashers import make_password
-
-# Unregister the default User admin if already registered
-try:
-    admin.site.unregister(User)
-except admin.sites.NotRegistered:
-    pass
-
-
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'role', 'is_active', 'is_staff')
-    search_fields = ('email', 'role')
-
-    def save_model(self, request, obj, form, change):
-        if form.cleaned_data.get("password"):
-            obj.password = make_password(form.cleaned_data["password"])
-        super().save_model(request, obj, form, change)
+from .models import Client, Property, PropertyPhoto
 
 class PropertyPhotoInline(admin.TabularInline):
     model = PropertyPhoto
@@ -40,9 +22,4 @@ class PropertyPhotoAdmin(admin.ModelAdmin):
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('full_name','email','phone')
 
-
-    def save_model(self, request, obj, form, change):
-        if form.cleaned_data.get("password"):
-            obj.password = make_password(form.cleaned_data["password"])
-        super().save_model(request, obj, form, change)
-
+    

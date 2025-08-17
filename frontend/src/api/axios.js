@@ -1,39 +1,22 @@
-// src/api/axios.js (update)
+import axios from "axios";
 
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      window.location.href = '/login'; // redirect browser to login
+const api = axios.create({
+  baseURL: "http://127.0.0.1:8000/api", // Django API
+});
+
+// Add access token if exists
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
-    return Promise.reject(error);
-  }
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const trimmed = cookie.trim();
-      if (trimmed.startsWith(name + '=')) {
-        cookieValue = decodeURIComponent(trimmed.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-
-api.interceptors.request.use(config => {
-  if (['post', 'put', 'patch', 'delete'].includes(config.method)) {
-    const csrftoken = getCookie('csrftoken');
-    if (csrftoken) {
-      config.headers['X-CSRFToken'] = csrftoken;
-    }
-  }
-  return config;
-});
+console.log("Token in axios:", localStorage.getItem("accessToken"));
 
 
 export default api;

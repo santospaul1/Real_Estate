@@ -7,17 +7,19 @@ const LeadList = () => {
   useEffect(() => {
     axios.get('/api/leads/', {
       headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('token')
+        Authorization: 'Bearer ' + localStorage.getItem('accessToken') // ✅ fixed
       }
     })
     .then(res => setLeads(res.data))
     .catch(err => console.error(err));
   }, []);
 
+  console.log("Token in axios:", localStorage.getItem("accessToken"));
+
   const updateStage = (id, newStage) => {
     axios.patch(`/api/leads/${id}/`, { stage: newStage }, {
       headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('token')
+        Authorization: 'Bearer ' + localStorage.getItem('accessToken') // ✅ fixed
       }
     })
     .then(() => {
@@ -26,7 +28,8 @@ const LeadList = () => {
           lead.id === id ? { ...lead, stage: newStage } : lead
         )
       );
-    });
+    })
+    .catch(err => console.error(err));
   };
 
   return (

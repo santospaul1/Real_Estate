@@ -98,7 +98,6 @@ class LeadViewSet(viewsets.ModelViewSet):
             # retrieve, update, partial_update, destroy
             permission_classes = [IsAgentAssignedOrReadOnly]
         return [p() for p in permission_classes]
-
     def get_queryset(self):
         user = self.request.user
         if user.role in ('admin', 'manager'):

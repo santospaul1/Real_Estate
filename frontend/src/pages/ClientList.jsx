@@ -4,9 +4,8 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 
 const auth = () => ({
-  Authorization: "Bearer " + localStorage.getItem("token"),
+  Authorization: "Bearer " + localStorage.getItem("accessToken"),
 });
-
 export default function ClientList() {
   const [clients, setClients] = useState([]);
   const [clientTypeFilter, setClientTypeFilter] = useState("");
