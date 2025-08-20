@@ -25,7 +25,7 @@ class Property(models.Model):
     location = models.CharField(max_length=255)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-    agent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    agent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,)
     date_listed = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -50,56 +50,6 @@ class PropertyPhoto(models.Model):
 
 
 
-# ---------- Lead ----------
-
-class Lead(models.Model):
-    PIPELINE_STAGE = [
-        ('lead', 'Lead'),
-        ('prospect', 'Prospect'),
-        ('client', 'Client'),
-    ]
-
-    SOURCE_CHOICES = [
-        ('web', 'Web form'),
-        ('phone', 'Phone'),
-        ('walkin', 'Walk-in'),
-        ('import', 'Import'),
-        ('other', 'Other'),
-    ]
-
-    full_name = models.CharField(max_length=255)
-    email = models.EmailField(blank=True, null=True)
-    phone = models.CharField(max_length=32, blank=True, null=True)
-    preferred_location = models.CharField(max_length=255, blank=True)
-    budget = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
-    timeline_days = models.IntegerField(null=True, blank=True)
-    engagement_score = models.IntegerField(default=0)
-    stage = models.CharField(max_length=20, choices=PIPELINE_STAGE, default='lead')
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='web')
-    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_leads')
-    interested_property = models.ForeignKey('Property', on_delete=models.SET_NULL, null=True, blank=True, related_name='interested_leads')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['stage']),
-            models.Index(fields=['assigned_to']),
-        ]
-
-    def __str__(self):
-        return f"{self.full_name} ({self.stage})"
-
-    def compute_score(self):
-        score = 0
-        if self.budget and self.budget >= 1_000_000:
-            score += 50
-        if self.timeline_days and self.timeline_days <= 30:
-            score += 30
-        if self.preferred_location:
-            score += 10
-        self.engagement_score = score
-        return score
 
 
 
@@ -111,6 +61,7 @@ class Client(models.Model):
         ('seller', 'Seller'),
         ('both', 'Both'),
     ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="client_profile", default=None, null=True, blank=True)
 
     full_name = models.CharField(max_length=255)
     email = models.EmailField(blank=True, null=True)
@@ -172,6 +123,58 @@ class AgentPerformance(models.Model):
         return f"Performance of {self.agent.user.username}"
 
 
+# ---------- Lead ----------
+
+class Lead(models.Model):
+    PIPELINE_STAGE = [
+        ('lead', 'Lead'),
+        ('prospect', 'Prospect'),
+        ('client', 'Client'),
+    ]
+
+    SOURCE_CHOICES = [
+        ('web', 'Web form'),
+        ('phone', 'Phone'),
+        ('walkin', 'Walk-in'),
+        ('import', 'Import'),
+        ('other', 'Other'),
+    ]
+
+    full_name = models.CharField(max_length=255)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=32, blank=True, null=True)
+    preferred_location = models.CharField(max_length=255, blank=True)
+    budget = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    timeline_days = models.IntegerField(null=True, blank=True)
+    engagement_score = models.IntegerField(default=0)
+    stage = models.CharField(max_length=20, choices=PIPELINE_STAGE, default='lead')
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='web')
+    assigned_to = models.ForeignKey(AgentProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_leads')
+    interested_property = models.ForeignKey('Property', on_delete=models.SET_NULL, null=True, blank=True, related_name='interested_leads')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['stage']),
+            models.Index(fields=['assigned_to']),
+        ]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.stage})"
+
+    def compute_score(self):
+        score = 0
+        if self.budget and self.budget >= 1_000_000:
+            score += 50
+        if self.timeline_days and self.timeline_days <= 30:
+            score += 30
+        if self.preferred_location:
+            score += 10
+        self.engagement_score = score
+        return score
+
+
 # ---------- Transaction (Deals / Commission Tracking) ----------
 class Transaction(models.Model):
     TRANSACTION_TYPE = [('sale', 'Sale'), ('rent', 'Rent')]
@@ -206,6 +209,21 @@ class Transaction(models.Model):
         if not self.signed_at:
             self.signed_at = timezone.now()
         super().save(*args, **kwargs)
+
+class Review(models.Model):
+    transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE, related_name="review")
+    rating = models.PositiveSmallIntegerField(default=5)  # 1–5 stars
+    comment = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # update agent satisfaction
+        agent = self.transaction.agent.agent_profile
+        ratings = Review.objects.filter(transaction__agent=self.transaction.agent).values_list("rating", flat=True)
+        avg_rating = sum(ratings) / len(ratings)
+        performance = agent.performance
+        performance.customer_satisfaction = avg_rating
+        performance.save(update_fields=['customer_satisfaction'])
 
 
 # ---------- Utility on Property: time on market and views/inquiries counters ----------

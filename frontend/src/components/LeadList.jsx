@@ -7,7 +7,7 @@ const LeadList = () => {
   useEffect(() => {
     axios.get('/api/leads/', {
       headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('accessToken') // ✅ fixed
+        Authorization: 'Bearer ' + localStorage.getItem('accessToken') 
       }
     })
     .then(res => setLeads(res.data))

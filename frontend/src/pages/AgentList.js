@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 
 const auth = () => ({
-  Authorization: "Bearer " + localStorage.getItem("token"),
+  Authorization: "Bearer " + localStorage.getItem("accessToken"),
 });
 
 export default function AgentList() {
@@ -18,8 +18,8 @@ export default function AgentList() {
     setError("");
 
     Promise.all([
-      axios.get("/agentprofiles/", { headers: auth() }),
-      axios.get("/api/dashboard/agent-performance/", { headers: auth() }),
+      axios.get("/api/usersapi/agentprofiles/", { headers: auth() }),
+      axios.get("/api/reports/agent-performance/", { headers: auth() }),
     ])
       .then(([aRes, pRes]) => {
         if (cancelled) return;

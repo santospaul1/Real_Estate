@@ -8,6 +8,14 @@ from rest_framework.response import Response
 from datetime import datetime
 import csv
 from django.http import HttpResponse
+from django.http import JsonResponse, HttpResponse
+from django.utils.dateparse import parse_date
+from openpyxl import Workbook
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+
 
 
 @api_view(['GET'])
@@ -71,8 +79,8 @@ def sales_report(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def property_pricing_analysis(request):
-    category = request.query_params.get('category')  # optional
-    location = request.query_params.get('location')  # optional
+    category = request.query_params.get('category')  
+    location = request.query_params.get('location')  
 
     qs = Property.objects.filter(status='available')
     if category:
@@ -133,19 +141,72 @@ def export_sales_csv(request):
         ])
     return response
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
+
+def filter_sales(request):
+    """Shared filter logic for Sales."""
+    qs = Transaction.objects.all()
+    agent_id = request.GET.get("agent_id")
+    client_id = request.GET.get("client_id")
+    status = request.GET.get("status")
+    date_from = request.GET.get("date_from")
+    date_to = request.GET.get("date_to")
+
+    if agent_id:
+        qs = qs.filter(agent_id=agent_id)
+    if client_id:
+        qs = qs.filter(client_id=client_id)
+    if status:
+        qs = qs.filter(status=status)
+    if date_from:
+        qs = qs.filter(date__gte=parse_date(date_from))
+    if date_to:
+        qs = qs.filter(date__lte=parse_date(date_to))
+
+    return qs
+
+
 def custom_report(request):
-    """
-    Expect payload like:
-    {
-      "metrics": ["total_sales", "deals_closed"],
-      "group_by": ["month"]
-    }
-    This is just a stub: returns fixed example data.
-    """
-    data = [
-        {"month": "2025-01", "total_sales": 100000, "deals_closed": 10},
-        {"month": "2025-02", "total_sales": 120000, "deals_closed": 12},
+    format_type = request.GET.get("format", "pdf")
+    qs = filter_sales(request)
+
+    # Common data
+    rows = [
+        ["Date", "Agent", "Client", "Amount", "Transaction"]
+    ] + [
+        [s.signed_at.strftime("%Y-%m-%d"), str(s.agent), str(s.buyer), s.amount, s.transaction_type ]
+        for s in qs
     ]
-    return Response(data)
+
+    # JSON
+    if format_type == "json":
+        return JsonResponse({"results": rows[1:]})
+
+    # Excel
+    elif format_type == "excel":
+        wb = Workbook()
+        ws = wb.active
+        for row in rows:
+            ws.append(row)
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = "attachment; filename=sales_report.xlsx"
+        wb.save(response)
+        return response
+
+    # PDF
+    elif format_type == "pdf":
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = "attachment; filename=sales_report.pdf"
+        doc = SimpleDocTemplate(response, pagesize=A4)
+        style = getSampleStyleSheet()
+        elements = [Paragraph("Sales Report", style["Heading2"])]
+        table = Table(rows)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+        elements.append(table)
+        doc.build(elements)
+        return response
+
+    return JsonResponse({"error": "Invalid format"}, status=400)

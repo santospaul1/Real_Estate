@@ -1,4 +1,5 @@
 import React from "react";
+import './App.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import PropertyList from "./components/PropertyList";
 import PropertyForm from "./components/PropertyForm";
@@ -11,7 +12,8 @@ import RegisterClient from "./pages/RegisterClient";
 import SalesReport from "./pages/SalesReport";
 import TransactionList from "./pages/TransactionList";
 import AgentList from "./pages/AgentList";
-import AgentDashboard from "./pages/AgentDashboard";
+import AgentDashboard from "./Agent/Dashboard";
+import ClientDashboard from "./Admin/ClientDashboard";
 import CommunicationList from "./pages/CommunicationLogList";
 import ClientDetail from "./pages/ClientDetail";
 import ClientList from "./pages/ClientList";
@@ -20,6 +22,7 @@ import LeadDetail from "./pages/LeadDetail";
 import PropertyAnalytics from "./components/PropertyAnalytics";
 import CustomReportBuilder from "./components/custom";
 import InquiryForm from "./components/InquiryForm";
+import Communications from "./pages/Communications";
 //import ProtectedRoute from "./components/ProtectedRoute";
 
 
@@ -29,8 +32,10 @@ export default function App() {
     <Router>
       <Routes>
 
-  
-<Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/communications" element={<Communications />} />
+<Route path="/dashboard" element={<AgentDashboard />} />
+<Route path="/admin/dashboard" element={<Dashboard />} />
+<Route path="/client/dashboard" element={<ClientDashboard />} />
 <Route path="/communicationlogs"element={<CommunicationList />}/>
 <Route path="/leads/:id" element={<LeadDetail />} />
 <Route path="/agents" element={<AgentList />} />

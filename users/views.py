@@ -86,7 +86,7 @@ class RoleAwareTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = RoleAwareTokenObtainPairSerializer
 
-class ClientRegisterView(APIView):
+class ClientRegistrationView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -101,29 +101,49 @@ class ClientRegisterView(APIView):
         if User.objects.filter(email=email).exists():
             return Response({"detail": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create the user as role=client
+        # Create the User with role=client
         user = User.objects.create_user(
-            username=email, email=email, password=password, role="client"
+            username=email,
+            email=email,
+            password=password,
+            role="client"
         )
 
-        # Create your domain Client record
+        # Link Client <-> User
         Client.objects.create(
+            user=user,
             full_name=full_name,
             email=email,
             assigned_agent=None
         )
 
-        # Option A: auto-login (return tokens now)
+        # Issue JWT tokens
         refresh = RefreshToken.for_user(user)
         return Response({
             "detail": "Client registered successfully.",
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "role": "client",
+            "role": user.role,
             "username": user.username
         }, status=status.HTTP_201_CREATED)
-    
-class ClientRegistrationView(generics.CreateAPIView):
-    queryset = Client.objects.all()
-    serializer_class = ClientRegistrationSerializer
-    permission_classes = [permissions.AllowAny]
+
+# users/views.py
+# users/views.py
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    user = request.user
+
+    if not user or not user.is_authenticated:
+        return Response({"detail": "Not authenticated"}, status=401)
+
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": getattr(user, "role", None),  # safely get role if it exists
+    })

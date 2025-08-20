@@ -1,50 +1,77 @@
-import React, { useEffect, useState } from 'react';
-import api from '../api/axios';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
+import React from "react";
+import { Link } from "react-router-dom";
+import TransactionList from "../pages/TransactionList"; // ✅ import your transactions component
 
-export default function Dashboard() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchStats() {
-      setLoading(true);
-      try {
-        const res = await api.get('dashboard/agent-performance/');
-        setData(res.data);
-      } catch (e) {
-        console.error('Failed to load dashboard data', e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStats();
-  }, []);
-
+export default function AgentDashboard() {
   return (
-    <div>
-      <h1>Agent Performance Dashboard</h1>
-      {loading && <p>Loading data...</p>}
-      {!loading && data.length > 0 && (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart
-            data={data}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      {/* Sidebar (same style as Admin) */}
+      <aside
+        style={{
+          width: "220px",
+          background: "#2c3e50",
+          color: "#ecf0f1",
+          padding: "20px",
+        }}
+      >
+        <h2 style={{ color: "#fff", marginBottom: "20px" }}>Agent Panel</h2>
+        <nav>
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            <li>
+              <Link to="/agent/dashboard" style={linkStyle}>
+                📊 Dashboard
+              </Link>
+            </li>
+            <li>
+              <Link to="/properties" style={linkStyle}>
+                🏠 My Properties
+              </Link>
+            </li>
+            <li>
+              <Link to="/transactions" style={linkStyle}>
+                💰 Transactions
+              </Link>
+            </li>
+            <li>
+              <Link to="/clients" style={linkStyle}>
+                👥 My Clients
+              </Link>
+            </li>
+            <li>
+              <Link to="/logout" style={linkStyle}>
+                🔐 Logout
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main style={{ flex: 1, padding: "20px", background: "#f5f6fa" }}>
+        <h1>Agent Dashboard</h1>
+
+        <section style={{ marginTop: "20px" }}>
+          <h2>Transactions & Commissions</h2>
+          <div
+            style={{
+              background: "#fff",
+              padding: "20px",
+              borderRadius: "10px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              marginTop: "10px",
+            }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="username" />
-            <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-            <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-            <Tooltip />
-            <Legend />
-            <Bar yAxisId="left" dataKey="deals_closed" fill="#8884d8" name="Deals Closed" />
-            <Bar yAxisId="right" dataKey="total_commission" fill="#82ca9d" name="Total Commission ($)" />
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-      {!loading && data.length === 0 && <p>No data available</p>}
+            <TransactionList />
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
+
+const linkStyle = {
+  color: "#ecf0f1",
+  textDecoration: "none",
+  display: "block",
+  padding: "10px 0",
+};

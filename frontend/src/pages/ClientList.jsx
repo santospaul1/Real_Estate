@@ -2,10 +2,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+//import "./ClientList.css"; // 👈 import CSS file
 
 const auth = () => ({
   Authorization: "Bearer " + localStorage.getItem("accessToken"),
 });
+
 export default function ClientList() {
   const [clients, setClients] = useState([]);
   const [clientTypeFilter, setClientTypeFilter] = useState("");
@@ -35,14 +37,16 @@ export default function ClientList() {
 
   const visibleClients = useMemo(() => {
     if (!clientTypeFilter) return clients;
-    return clients.filter((c) => (c.client_type || "").toLowerCase() === clientTypeFilter);
+    return clients.filter(
+      (c) => (c.client_type || "").toLowerCase() === clientTypeFilter
+    );
   }, [clients, clientTypeFilter]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Clients</h1>
+    <div className="page-container">
+      <h1 className="page-title">Clients</h1>
 
-      <div style={{ margin: "12px 0" }}>
+      <div className="filter-container">
         <label>
           Filter by type:&nbsp;
           <select
@@ -57,21 +61,36 @@ export default function ClientList() {
         </label>
       </div>
 
-      {loading && <p>Loading clients…</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {loading && <p className="loading">Loading clients…</p>}
+      {error && <p className="error">{error}</p>}
+      {!loading && visibleClients.length === 0 && (
+        <p className="empty">No clients found.</p>
+      )}
 
-      {!loading && visibleClients.length === 0 && <p>No clients found.</p>}
-
-      <ul>
-        {visibleClients.map((client) => (
-          <li key={client.id}>
-            <strong>{client.full_name}</strong> — {client.client_type || "n/a"}
-            {client.email ? ` — ${client.email}` : ""}
-            {"  "}
-            <Link to={`/clients/${client.id}`}>View</Link>
-          </li>
-        ))}
-      </ul>
+      <table className="styled-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Email</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visibleClients.map((client) => (
+            <tr key={client.id}>
+              <td data-label="Name">{client.full_name}</td>
+              <td data-label="Type">{client.client_type || "n/a"}</td>
+              <td data-label="Email">{client.email || "-"}</td>
+              <td data-label="Action">
+                <Link className="view-link" to={`/clients/${client.id}`}>
+                  View
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

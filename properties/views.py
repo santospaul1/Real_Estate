@@ -1,10 +1,10 @@
 # views.py
 from inquiries.models import Inquiry
-from rest_framework import viewsets, status,generics
+from rest_framework import viewsets, status,generics,filters
 from rest_framework.response import Response
 from .models import AgentPerformance, CommunicationLog, Property, PropertyPhoto, Transaction
 from .serializers import AgentPerformanceSerializer, CommunicationLogSerializer, PropertyAnalyticsSerializer, PropertySerializer, TransactionSerializer
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum,Q
 from rest_framework.decorators import action
 from django.utils.timezone import now
 from django.db.models import Count, Avg, F, ExpressionWrapper, DurationField
@@ -16,14 +16,29 @@ from .models import Lead, Client, CommunicationLog, AgentProfile
 from .serializers import LeadSerializer, ClientSerializer, CommunicationLogSerializer, AgentProfileSerializer
 from users.permissions import IsAdminOrManager, IsAgentAssignedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 class PropertyViewSet(viewsets.ModelViewSet):
     queryset = Property.objects.all().select_related('agent').prefetch_related('photos')
     serializer_class = PropertySerializer
-    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    # ✅ move these OUTSIDE retrieve()
+    filterset_fields = ['category', 'status', 'location', 'price']
+    search_fields = ['title', 'description', 'location', 'category']
+    ordering_fields = ['price', 'date_listed']
+
+    def get_permissions(self):
+        if self.action in ['list']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
-        # Create Property
         property_obj = Property.objects.create(
             title=request.data.get("title"),
             description=request.data.get("description"),
@@ -34,23 +49,32 @@ class PropertyViewSet(viewsets.ModelViewSet):
             agent=request.user if request.user.is_authenticated else None
         )
         
-    
-        # Upload multiple images
         photos = request.FILES.getlist("photos")
         for photo in photos:
             PropertyPhoto.objects.create(property=property_obj, image=photo)
 
         return Response(PropertySerializer(property_obj).data, status=status.HTTP_201_CREATED)
     
-
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop("partial", False)
         instance = self.get_object()
+        old_status = instance.status
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        property_obj = serializer.save()
+
+        # if property closed, update agent performance
+        if old_status != "closed" and property_obj.status == "sold":
+            if property_obj.assigned_agent:
+                commission = property_obj.price * 0.03  
+                agent = property_obj.agent
+                agent.total_commission += commission
+                agent.deals_closed += 1
+                agent.save()
+
         return Response(serializer.data)
-    
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.views += 1
@@ -100,15 +124,55 @@ class LeadViewSet(viewsets.ModelViewSet):
         return [p() for p in permission_classes]
     def get_queryset(self):
         user = self.request.user
-        if user.role in ('admin', 'manager'):
+        if user.role in ('admin', 'manager', ):
             return Lead.objects.all().order_by('-created_at')
         elif user.role == 'agent':
-            return Lead.objects.filter(assigned_to=user).order_by('-created_at')
+            return Lead.objects.filter(assigned_to=user.agent_profile).order_by('-created_at')
         return Lead.objects.none()
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        lead_data = serializer.validated_data
+        territory = lead_data.get("preferred_location")
+        specialization = None
+        if lead_data.get("interested_property"):
+            specialization = lead_data["interested_property"].category  # adjust if different
+
+        agents = AgentProfile.objects.annotate(total_leads=Count("assigned_leads"))
+        print(f"Found {agents.count()} agents before filtering")
+
+        best_agent = (
+            agents.filter(Q(territory=territory) & Q(specialization=specialization))
+            .order_by("total_leads")
+            .first()
+        )
+
+        if not best_agent:
+            best_agent = (
+                agents.filter(territory=territory)
+                .order_by("total_leads")
+                .first()
+            )
+
+        if not best_agent:
+            best_agent = agents.order_by("total_leads").first()
+
+        lead = serializer.save(assigned_to=best_agent)
+        print(f"Assigned lead to agent: {best_agent.user.username if best_agent else 'None'}")
+
+        return Response(
+            LeadSerializer(lead).data,
+            status=status.HTTP_201_CREATED,
+        )
+    
+
+    
 class ClientViewSet(viewsets.ModelViewSet):
     queryset = Client.objects.all().order_by('-created_at')
     serializer_class = ClientSerializer
+    
 
     def get_permissions(self):
         if self.action in ['list', 'create']:
@@ -139,12 +203,14 @@ class AgentProfileViewSet(viewsets.ReadOnlyModelViewSet):
     
     
     serializer_class = AgentProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    #permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__username', 'specialization', 'territory']
 
     
     def get_queryset(self):
+        agents = AgentProfile.objects.all()
+        print(agents)
         return AgentProfile.objects.all()
 
 
@@ -208,4 +274,5 @@ def agent_performance_summary(request):
             'deals_closed': deals_closed,
             'total_commission': float(total_commission),
         })
+    return Response(data)
 

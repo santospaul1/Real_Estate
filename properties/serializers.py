@@ -43,38 +43,27 @@ class PropertyAnalyticsSerializer(serializers.ModelSerializer):
         return obj.time_on_market
 
 class LeadSerializer(serializers.ModelSerializer):
-    assigned_to = serializers.SlugRelatedField(
-        slug_field='username', queryset=User.objects.all(), required=False, allow_null=True
+    assigned_to_username = serializers.CharField(
+        source="assigned_to.user.username", read_only=True
+    )
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=AgentProfile.objects.all(),
+        required=False,
+        allow_null=True
     )
     interested_property = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Lead
         fields = '__all__'
-        read_only_fields = ('engagement_score', 'created_at', 'updated_at')
+        read_only_fields = ('engagement_score', 'created_at', 'updated_at', 'assigned_to', 'interested_property')
 
-    def create(self, validated_data):
-        lead = super().create(validated_data)
-        lead.compute_score()
-        lead.save(update_fields=['engagement_score'])
-        return lead
 
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
         instance.compute_score()
         instance.save(update_fields=['engagement_score'])
         return instance
-
-
-class ClientSerializer(serializers.ModelSerializer):
-    assigned_agent = serializers.SlugRelatedField(
-        slug_field='username', queryset=User.objects.all(), required=False, allow_null=True
-    )
-
-    class Meta:
-        model = Client
-        fields = '__all__'
-        read_only_fields = ('created_at',)
 
 
 class CommunicationLogSerializer(serializers.ModelSerializer):
@@ -86,6 +75,19 @@ class CommunicationLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunicationLog
         fields = '__all__'
+
+class ClientSerializer(serializers.ModelSerializer):
+    assigned_agent = serializers.SlugRelatedField(
+        slug_field='username', queryset=User.objects.all(), required=False, allow_null=True
+    )
+    communications = CommunicationLogSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Client
+        fields = '__all__'
+        read_only_fields = ('created_at',)
+
+
 
 
 class AgentProfileSerializer(serializers.ModelSerializer):
